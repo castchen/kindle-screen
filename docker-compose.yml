@@ -1,0 +1,15 @@
+services:
+  kindle-screen:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - ACCESS_TOKEN=${ACCESS_TOKEN:-}
+      - DATA_DIR=/data
+    volumes:
+      - kindle-screen-data:/data
+    restart: unless-stopped
+
+volumes:
+  kindle-screen-data:
