@@ -71,6 +71,20 @@
     };
   }
 
+  // Kindle 浏览器时区常是 UTC，统一按东八区显示，避免「开始于」差 8 小时
+  var DISPLAY_TZ_OFFSET_MINUTES = 8 * 60;
+
+  function partsInOffset(date, offsetMinutes) {
+    var shifted = new Date(date.getTime() + offsetMinutes * 60000);
+    return {
+      year: shifted.getUTCFullYear(),
+      month: shifted.getUTCMonth() + 1,
+      day: shifted.getUTCDate(),
+      hours: shifted.getUTCHours(),
+      minutes: shifted.getUTCMinutes(),
+    };
+  }
+
   function formatClock(iso) {
     if (!iso) {
       return "—";
@@ -79,19 +93,20 @@
     if (isNaN(d.getTime())) {
       return "—";
     }
+    var p = partsInOffset(d, DISPLAY_TZ_OFFSET_MINUTES);
     var pad = function (n) {
       return n < 10 ? "0" + n : String(n);
     };
     return (
-      d.getFullYear() +
+      p.year +
       "-" +
-      pad(d.getMonth() + 1) +
+      pad(p.month) +
       "-" +
-      pad(d.getDate()) +
+      pad(p.day) +
       " " +
-      pad(d.getHours()) +
+      pad(p.hours) +
       ":" +
-      pad(d.getMinutes())
+      pad(p.minutes)
     );
   }
 
