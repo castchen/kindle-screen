@@ -1,10 +1,8 @@
 (function () {
   var screenEl = document.getElementById("screen");
   var labelEl = document.getElementById("label");
-  var hoursNumEl = document.getElementById("hoursNum");
-  var hoursUnitEl = document.getElementById("hoursUnit");
-  var minsNumEl = document.getElementById("minsNum");
-  var minsUnitEl = document.getElementById("minsUnit");
+  var hoursEl = document.getElementById("timeHours");
+  var minsEl = document.getElementById("timeMins");
   var subEl = document.getElementById("sub");
   var idleEl = document.getElementById("idle");
 
@@ -29,12 +27,11 @@
     el.style.fontSize = px + "px";
   }
 
-  // 用独立测量节点，避免 width:100% 时 scrollWidth 永远偏大导致字号塌缩
   function measure(el, fontPx) {
     var probe = document.createElement("div");
     probe.style.cssText =
       "position:absolute;left:-99999px;top:0;visibility:hidden;white-space:nowrap;width:auto;height:auto;margin:0;padding:0;font-weight:" +
-      (el.style.fontWeight || window.getComputedStyle(el).fontWeight || "900") +
+      (window.getComputedStyle(el).fontWeight || "900") +
       ";font-family:" +
       (window.getComputedStyle(el).fontFamily || "sans-serif") +
       ";line-height:0.95;font-size:" +
@@ -76,24 +73,41 @@
 
   function fitTimer(vp) {
     var maxW = Math.floor(vp.w * 0.96);
-    var bands = [
-      { el: labelEl, start: 0.015, end: 0.09, num: false },
-      { el: hoursNumEl, start: 0.09, end: 0.4, num: true },
-      { el: hoursUnitEl, start: 0.4, end: 0.48, num: false },
-      { el: minsNumEl, start: 0.48, end: 0.79, num: true },
-      { el: minsUnitEl, start: 0.79, end: 0.87, num: false },
-      { el: subEl, start: 0.87, end: 0.985, num: false },
-    ];
+    var labelBand = { el: labelEl, start: 0.02, end: 0.12 };
+    var hoursBand = { el: hoursEl, start: 0.12, end: 0.48 };
+    var minsBand = { el: minsEl, start: 0.48, end: 0.84 };
+    var subBand = { el: subEl, start: 0.84, end: 0.98 };
+    var mainBandH = Math.floor(vp.h * 0.36);
 
+    // 先各自能到多大，再取较小值，保证「N小时」「N分」完全同字号
+    var hoursSize = maxFont(hoursEl, 24, Math.floor(mainBandH * 0.95), maxW, mainBandH);
+    var minsSize = maxFont(minsEl, 24, Math.floor(mainBandH * 0.95), maxW, mainBandH);
+    var shared = Math.min(hoursSize, minsSize);
+    setFont(hoursEl, shared);
+    setFont(minsEl, shared);
+
+    maxFont(
+      labelEl,
+      18,
+      Math.floor(vp.h * 0.08),
+      maxW,
+      Math.floor(vp.h * 0.1)
+    );
+    maxFont(
+      subEl,
+      14,
+      Math.floor(vp.h * 0.06),
+      maxW,
+      Math.floor(vp.h * 0.12)
+    );
+
+    var bands = [labelBand, hoursBand, minsBand, subBand];
     var i;
     for (i = 0; i < bands.length; i++) {
       var b = bands[i];
       var bandH = Math.max(20, Math.floor(vp.h * (b.end - b.start)));
-      var hi = Math.floor(bandH * (b.num ? 1.05 : 0.92));
-      maxFont(b.el, 20, Math.max(20, hi), maxW, bandH);
-      var size = measure(b.el, parseInt(b.el.style.fontSize, 10) || 20);
-      var top = vp.h * b.start + (bandH - size.h) / 2;
-      place(b.el, top, vp.w);
+      var measured = measure(b.el, parseInt(b.el.style.fontSize, 10) || 20);
+      place(b.el, vp.h * b.start + (bandH - measured.h) / 2, vp.w);
     }
   }
 
@@ -128,33 +142,25 @@
       idleEl.textContent = state.message;
       idleEl.classList.remove("hidden");
       labelEl.classList.add("hidden");
-      hoursNumEl.classList.add("hidden");
-      hoursUnitEl.classList.add("hidden");
-      minsNumEl.classList.add("hidden");
-      minsUnitEl.classList.add("hidden");
+      hoursEl.classList.add("hidden");
+      minsEl.classList.add("hidden");
       subEl.classList.add("hidden");
     } else if (!elapsed) {
       idleEl.textContent = "尚未开始计时";
       idleEl.classList.remove("hidden");
       labelEl.classList.add("hidden");
-      hoursNumEl.classList.add("hidden");
-      hoursUnitEl.classList.add("hidden");
-      minsNumEl.classList.add("hidden");
-      minsUnitEl.classList.add("hidden");
+      hoursEl.classList.add("hidden");
+      minsEl.classList.add("hidden");
       subEl.classList.add("hidden");
     } else {
       idleEl.classList.add("hidden");
       labelEl.classList.remove("hidden");
-      hoursNumEl.classList.remove("hidden");
-      hoursUnitEl.classList.remove("hidden");
-      minsNumEl.classList.remove("hidden");
-      minsUnitEl.classList.remove("hidden");
+      hoursEl.classList.remove("hidden");
+      minsEl.classList.remove("hidden");
       subEl.classList.remove("hidden");
       labelEl.textContent = "距上次吃奶";
-      hoursNumEl.textContent = String(elapsed.hours);
-      hoursUnitEl.textContent = "小时";
-      minsNumEl.textContent = String(elapsed.minutes);
-      minsUnitEl.textContent = "分";
+      hoursEl.textContent = elapsed.hours + "小时";
+      minsEl.textContent = elapsed.minutes + "分";
       subEl.textContent =
         "开始于 " + KindleScreen.formatClock(state.startedAt);
     }
