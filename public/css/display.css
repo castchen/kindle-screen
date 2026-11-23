@@ -41,10 +41,10 @@ body {
   line-height: 1.1;
 }
 
-#hoursUnit,
-#minsUnit {
-  font-weight: 800;
-  line-height: 1;
+#timeHours,
+#timeMins {
+  font-weight: 900;
+  line-height: 0.95;
 }
 
 #sub {
