@@ -12,30 +12,54 @@
 ## 部署到云服务器
 
 ```bash
-git clone <你的仓库>
+git clone https://github.com/castchen/kindle-screen.git
 cd kindle-screen
 npm install
-PORT=3000 ACCESS_TOKEN=换成你的口令 npm start
 ```
 
-或用 Docker：
+**不要**直接前台跑 `npm start` 再关终端——进程会一起退出。任选下面一种后台方式。
+
+### 方式 A：后台脚本（最快）
+
+```bash
+chmod +x scripts/run-background.sh
+PORT=3000 ACCESS_TOKEN=换成你的口令 ./scripts/run-background.sh
+```
+
+关掉网页终端 / SSH 后服务仍继续。日志在 `app.log`。
+
+### 方式 B：systemd（推荐，开机自启）
+
+```bash
+sudo mkdir -p /opt/kindle-screen
+sudo rsync -a --exclude node_modules ./ /opt/kindle-screen/
+cd /opt/kindle-screen && sudo npm install --omit=dev
+sudo cp deploy/kindle-screen.service /etc/systemd/system/
+# 编辑服务文件，改 ACCESS_TOKEN，确认 node 路径：which node
+sudo nano /etc/systemd/system/kindle-screen.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now kindle-screen
+sudo systemctl status kindle-screen
+```
+
+### 方式 C：Docker
 
 ```bash
 docker build -t kindle-screen .
-docker run -d --name kindle-screen \
+docker run -d --name kindle-screen --restart unless-stopped \
   -p 3000:3000 \
   -e ACCESS_TOKEN=换成你的口令 \
   -v kindle-screen-data:/data \
   kindle-screen
 ```
 
-建议前面挂 Nginx / Caddy，用 HTTPS 域名访问。
+云安全组放行对应端口。可用 `http://公网IP:端口` 访问；有域名时再挂 Nginx / Caddy 上 HTTPS。
 
 ## Kindle 使用步骤
 
-1. Kindle 打开 **实验性浏览器**，访问：`https://你的域名/display.html`
+1. Kindle 打开 **实验性浏览器**，访问：`http://你的公网IP:端口/display.html`
 2. 尽量横屏；部分机型可把浏览器加到主屏，减少工具栏占用
-3. 手机打开：`https://你的域名/control.html`
+3. 手机打开：`http://你的公网IP:端口/control.html`
 4. 若设置了 `ACCESS_TOKEN`，在控制页底部填一次即可
 5. 点 **宝宝刚吃完**，Kindle 屏上会出现「距上次吃奶 X 小时 Y 分」
 

@@ -1,0 +1,19 @@
+[Unit]
+Description=Kindle feeding timer screen
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/kindle-screen
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=DATA_DIR=/opt/kindle-screen/data
+# 口令只写在这台机器上，不要提交到 Git
+Environment=ACCESS_TOKEN=换成你的口令
+# 若 node 不在 /usr/bin/node，用 which node 查到的路径替换 ExecStart
+
+[Install]
+WantedBy=multi-user.target
